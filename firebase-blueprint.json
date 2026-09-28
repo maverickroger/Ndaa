@@ -1,0 +1,178 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User account information, preferences and study targets for NDA Mathematics",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "format": "email" },
+        "photoURL": { "type": "string", "maxLength": 1000 },
+        "targetYear": { "type": "integer" },
+        "examDate": { "type": "string" },
+        "dailyGoal": { "type": "number" },
+        "communityPublic": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "firstLogin": { "type": "string" },
+        "lastLogin": { "type": "string" },
+        "loginCount": { "type": "integer" },
+        "lastStudyDate": { "type": "string" }
+      },
+      "required": ["name", "email", "targetYear", "examDate", "dailyGoal"]
+    },
+    "Chapter": {
+      "title": "Mathematics Chapter Progress",
+      "description": "Detailed progress tracking for a single NDA Mathematics chapter",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 150 },
+        "section": { "type": "string", "maxLength": 100 },
+        "priority": { "type": "string", "enum": ["HIGH", "Normal"] },
+        "order": { "type": "integer" },
+        "completed": { "type": "boolean" },
+        "pyqSolved": { "type": "integer" },
+        "pyqTarget": { "type": "integer" },
+        "mockTests": { "type": "integer" },
+        "questionsSolved": { "type": "integer" },
+        "studyHours": { "type": "number" },
+        "focusTopic": { "type": "string", "maxLength": 200 },
+        "averageScore": { "type": "number" },
+        "revisionStatus": { "type": "string", "enum": ["Not Started", "In Progress", "Revised Once", "Revised Twice", "Mastered"] },
+        "lastRevisedAt": { "type": "string" },
+        "nextRevisionAt": { "type": "string" },
+        "revisionCount": { "type": "integer" },
+        "needsRevision": { "type": "boolean" },
+        "lastUpdated": { "type": "string" }
+      },
+      "required": ["name", "completed", "pyqSolved", "pyqTarget", "questionsSolved", "studyHours", "averageScore", "revisionStatus", "revisionCount", "needsRevision", "lastUpdated"]
+    },
+    "DailyLog": {
+      "title": "Daily Mathematics Study Log",
+      "description": "Logs of study sessions recorded by date",
+      "type": "object",
+      "properties": {
+        "entries": {
+          "type": "array",
+          "description": "List of study session logs for this date"
+        }
+      },
+      "required": ["entries"]
+    },
+    "MockTest": {
+      "title": "Mathematics Mock Test Record",
+      "description": "Detailed results and tracking for an attempted NDA Mathematics Mock Test (120 Questions / 300 Marks)",
+      "type": "object",
+      "properties": {
+        "mockNumber": { "type": "integer" },
+        "date": { "type": "string" },
+        "totalQuestions": { "type": "integer" },
+        "attempted": { "type": "integer" },
+        "correct": { "type": "integer" },
+        "wrong": { "type": "integer" },
+        "skipped": { "type": "integer" },
+        "score": { "type": "number" },
+        "negativeMarks": { "type": "number" },
+        "timeTaken": { "type": "integer" },
+        "accuracy": { "type": "number" },
+        "weakAreas": { "type": "string", "maxLength": 500 },
+        "notes": { "type": "string", "maxLength": 1000 }
+      },
+      "required": ["mockNumber", "date", "totalQuestions", "attempted", "correct", "wrong", "skipped", "score", "negativeMarks", "timeTaken", "accuracy"]
+    },
+    "PyqByYear": {
+      "title": "PYQ Solved by Year",
+      "description": "Chapter-level year wise PYQ count mapping (2018–2025)",
+      "type": "object",
+      "properties": {
+        "year": { "type": "integer" },
+        "totalSolved": { "type": "integer" },
+        "chapterBreakdown": { "type": "object" }
+      },
+      "required": ["year", "totalSolved", "chapterBreakdown"]
+    },
+    "RevisionQueueItem": {
+      "title": "Mathematics Revision Queue Item",
+      "description": "Mathematics chapters scheduled for active spaced-repetition review",
+      "type": "object",
+      "properties": {
+        "chapter": { "type": "string", "maxLength": 150 },
+        "lastRevisedAt": { "type": "string" },
+        "nextRevisionAt": { "type": "string" },
+        "interval": { "type": "integer" },
+        "revisionCount": { "type": "integer" },
+        "status": { "type": "string" }
+      },
+      "required": ["chapter", "interval", "revisionCount", "status"]
+    },
+    "CommunityProfile": {
+      "title": "Public Community Mathematics Profile",
+      "description": "Opted-in NDA candidate Mathematics progress metrics and category breakdown",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "targetYear": { "type": "integer" },
+        "completion": { "type": "number" },
+        "pyqsSolved": { "type": "integer" },
+        "mockTests": { "type": "integer" },
+        "questionsSolved": { "type": "integer" },
+        "studyHours": { "type": "number" },
+        "averageScore": { "type": "number" },
+        "currentStreak": { "type": "integer" },
+        "lastActive": { "type": "string" },
+        "categoryProgress": { "type": "object" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["uid", "displayName", "completion", "pyqsSolved", "mockTests", "studyHours", "averageScore", "updatedAt"]
+    },
+    "CommunityActivity": {
+      "title": "Public Community Activity log",
+      "description": "Anonymous progress events registered by opted-in aspirants",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "type": { "type": "string" },
+        "chapter": { "type": "string" },
+        "value": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "public": { "type": "boolean" }
+      },
+      "required": ["uid", "displayName", "type", "createdAt", "public"]
+    }
+  },
+  "firestore": {
+    "communityProfiles/{uid}": {
+      "schema": "CommunityProfile",
+      "description": "Public community comparisons and dashboards"
+    },
+    "communityActivity/{activityId}": {
+      "schema": "CommunityActivity",
+      "description": "Recent candidate activities and completions stream"
+    },
+    "users/{uid}": {
+      "schema": "User",
+      "description": "User profile document"
+    },
+    "users/{uid}/chapters/{chapterId}": {
+      "schema": "Chapter",
+      "description": "Specific Mathematics chapter metrics"
+    },
+    "users/{uid}/dailyLogs/{date}": {
+      "schema": "DailyLog",
+      "description": "Study logs for a given calendar date"
+    },
+    "users/{uid}/mockTests/{mockId}": {
+      "schema": "MockTest",
+      "description": "NDA Mathematics mock test records"
+    },
+    "users/{uid}/pyqByYear/{year}": {
+      "schema": "PyqByYear",
+      "description": "Yearly breakdown of solved PYQs across Mathematics chapters"
+    },
+    "users/{uid}/revisionQueue/{chapterId}": {
+      "schema": "RevisionQueueItem",
+      "description": "Spaced repetition state for a Mathematics chapter"
+    }
+  }
+}

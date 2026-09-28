@@ -1,0 +1,171 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Catch-all safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && (request.auth.token.email_verified == true || request.auth.token.email == "forworkusage19@gmail.com");
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == "forworkusage19@gmail.com" ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // Entity validation helpers
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['name', 'email', 'targetYear', 'examDate', 'dailyGoal'])
+        && data.keys().hasOnly(['name', 'email', 'photoURL', 'targetYear', 'examDate', 'dailyGoal', 'communityPublic', 'privacyPublic', 'createdAt', 'firstLogin', 'lastLogin', 'loginCount', 'lastStudyDate'])
+        && data.name is string && data.name.size() <= 150
+        && data.email is string && data.email.size() <= 200
+        && data.targetYear is int
+        && data.examDate is string && data.examDate.size() <= 50
+        && (data.dailyGoal is int || data.dailyGoal is float)
+        && (!('communityPublic' in data) || data.communityPublic is bool)
+        && (!('privacyPublic' in data) || data.privacyPublic is bool);
+    }
+
+    function isValidChapter(data) {
+      return data.keys().hasAll(['name', 'completed', 'pyqSolved', 'pyqTarget', 'mockTests', 'questionsSolved', 'studyHours', 'averageScore', 'revisionStatus', 'revisionCount', 'needsRevision', 'lastUpdated'])
+        && data.name is string && data.name.size() <= 150
+        && data.completed is bool
+        && data.pyqSolved is int
+        && data.pyqTarget is int
+        && data.mockTests is int
+        && data.questionsSolved is int
+        && (data.studyHours is int || data.studyHours is float)
+        && (data.averageScore is int || data.averageScore is float)
+        && data.revisionStatus is string && data.revisionStatus.size() <= 50
+        && data.revisionCount is int
+        && data.needsRevision is bool
+        && data.lastUpdated is string && data.lastUpdated.size() <= 50;
+    }
+
+    function isValidDailyLog(data) {
+      return data.keys().hasOnly(['entries'])
+        && data.entries is list;
+    }
+
+    function isValidMockTest(data) {
+      return data.keys().hasAll(['mockNumber', 'date', 'totalQuestions', 'attempted', 'correct', 'wrong', 'skipped', 'score', 'negativeMarks', 'timeTaken', 'accuracy'])
+        && data.mockNumber is int
+        && data.date is string && data.date.size() <= 50
+        && data.totalQuestions is int
+        && data.attempted is int
+        && data.correct is int
+        && data.wrong is int
+        && data.skipped is int
+        && (data.score is int || data.score is float)
+        && (data.negativeMarks is int || data.negativeMarks is float)
+        && data.timeTaken is int
+        && (data.accuracy is int || data.accuracy is float);
+    }
+
+    function isValidPyqByYear(data) {
+      return data.keys().hasAll(['year', 'totalSolved', 'chapterBreakdown'])
+        && data.year is int
+        && data.totalSolved is int
+        && data.chapterBreakdown is map;
+    }
+
+    function isValidRevisionQueueItem(data) {
+      return data.keys().hasAll(['chapter', 'interval', 'revisionCount', 'status'])
+        && data.chapter is string && data.chapter.size() <= 150
+        && data.interval is int
+        && data.revisionCount is int
+        && data.status is string && data.status.size() <= 50;
+    }
+
+    function isValidCommunityProfile(data) {
+      return data.keys().hasAll(['uid', 'displayName', 'completion', 'pyqsSolved', 'mockTests', 'studyHours', 'averageScore', 'updatedAt'])
+        && data.uid == request.auth.uid
+        && data.displayName is string && data.displayName.size() <= 100;
+    }
+
+    function isValidCommunityActivity(data) {
+      return data.keys().hasAll(['uid', 'displayName', 'type', 'chapter', 'createdAt', 'public'])
+        && data.uid == request.auth.uid
+        && data.displayName is string && data.displayName.size() <= 100
+        && data.type is string && data.type.size() <= 50
+        && data.public == true;
+    }
+
+    // Rules matching paths
+
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid) && isValidUser(request.resource.data);
+      allow update: if isOwner(uid) && isValidUser(request.resource.data);
+      allow delete: if isAdmin();
+
+      match /chapters/{chapterId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow write: if isOwner(uid) && isValidChapter(request.resource.data);
+      }
+
+      // Legacy subjects path read support for migration
+      match /subjects/{subjectId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow write: if isOwner(uid);
+
+        match /chapters/{chapterId} {
+          allow read: if isOwner(uid) || isAdmin();
+          allow write: if isOwner(uid);
+        }
+      }
+
+      match /dailyLogs/{date} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow write: if isOwner(uid) && isValidDailyLog(request.resource.data);
+      }
+
+      match /mockTests/{mockId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow write: if isOwner(uid) && isValidMockTest(request.resource.data);
+      }
+
+      match /pyqByYear/{year} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow write: if isOwner(uid) && isValidPyqByYear(request.resource.data);
+      }
+
+      match /revisionQueue/{chapterId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow write: if isOwner(uid) && isValidRevisionQueueItem(request.resource.data);
+      }
+    }
+
+    match /communityProfiles/{uid} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(uid) && isValidCommunityProfile(request.resource.data);
+      allow delete: if isOwner(uid) || isAdmin();
+    }
+
+    match /communityActivity/{activityId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.resource.data.uid == request.auth.uid && isValidCommunityActivity(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+  }
+}
